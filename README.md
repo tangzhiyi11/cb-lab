@@ -1,17 +1,9 @@
 <p align="center">
-<pre>
-   ██████╗  ██████╗       ██╗      █████╗ ██████╗ 
-  ██╔════╝ ██╔═══██╗      ██║     ██╔══██╗██╔══██╗
-  ██║      ██║   ██║      ██║     ███████║██████╔╝
-  ██║      ██║   ██║      ██║     ██╔══██║██╔══██╗
-  ╚██████╗ ╚██████╔╝      ███████╗██║  ██║██║  ██║
-   ╚═════╝  ╚═════╝       ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
-              Continuous Batching Lab
-</pre>
+  <img src="cb-lab-logo.svg" alt="CB-LAB Logo" width="720" />
 </p>
 
 # cb-lab
-A minimal learning framework to understand Continuous Batching, Ragged Batching, Dynamic Scheduling, KV Cache, and Paged Attention from scratch.
+一个最小化的学习框架，用于从零理解 Continuous Batching、Ragged Batching、Dynamic Scheduling、KV Cache 与 Paged Attention 等核心机制。
 
 ## 1. Overview
 
