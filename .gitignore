@@ -1,0 +1,8 @@
+# Python venv and tooling
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# OS artifacts
+.DS_Store

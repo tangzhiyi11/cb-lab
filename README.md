@@ -3,64 +3,78 @@
 </p>
 
 # cb-lab
-一个最小化的学习框架，用于从零理解 Continuous Batching、Ragged Batching、Dynamic Scheduling、KV Cache 与 Paged Attention 等核心机制。
+A tiny learning framework that re-implements the core ideas behind modern continuous batching inference engines (prefill + decode, ragged batching, KV cache, paged attention).
 
 ## 1. Overview
+cb-lab is intentionally small and transparent. The goal is clarity, not performance:
 
-cb-lab 是一个面向学习者的、完全“从零开始”的 continuous batching 框架。
-目标不是追求性能，而是让你 彻底吃透现代大模型推理系统背后的核心技术，包括：
+- KV cache and chunked prefill for long prompts
+- Ragged batching (no padding) with explicit causal masks
+- Token-level dynamic scheduling that mixes prefill and decode in one step
+- Paged attention style KV layout for the decode fast path
 
--	KV Cache（缓存历史 K/V，降低解码成本）
--	Chunked Prefill（长 Prompt 分块，适应显存限制）
--	Ragged Batching（无 batch 维度、拼接 token、mask 控制交互）
--	Dynamic Scheduling（混合 prefill + decode 的 token-level 调度）
--	Paged Attention（稀疏化 KV 布局，decode 快路径）
+Every component is debuggable and printable so you can see exactly how continuous batching works end-to-end.
 
-它是一个 nano-scale 的 vLLM / LMDeploy 内核……用于学习，而非工程生产。
+## 2. Repository structure
+```
+cb_lab/           # library code
+  core/           # request lifecycle, scheduler, KV cache, ragged batch builder
+  attention/      # dense, ragged, and paged attention helpers
+  model/          # TinyLLM single-layer attention block
+demos/            # runnable scripts that visualize each concept
+tests/            # lightweight correctness checks
+```
 
-在 cb-lab 中：
+## 3. Quick start
+Create a virtual environment with Python 3.9+ and install dependencies:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+pip install -r requirements.txt
+```
 
-- 每个组件都极简透明，可单独运行
-- 所有结构、mask、KV-cache 都可打印、可观察、可调试
-- 每一步调度都能看到发生了什么
-- 可以逐行 debug，从核心原理彻底掌握 continuous batching
+Run a demo to see ragged masking:
+```bash
+python -m demos.demo_ragged_mask
+```
 
-## 2. Key Features
+Mix prefill + decode with the scheduler:
+```bash
+python -m demos.demo_prefill_decode_mix
+```
 
-✔ 从零构建完整 continuous batching 推理内核
+Run the tiny test suite:
+```bash
+pytest tests
+```
 
-你可以看到 continuous batching 的整个执行流程：
+## 4. Documentation
+- [docs/get_started.md](docs/get_started.md)
+- [docs/architecture.md](docs/architecture.md)
+- [docs/continuous_batching.md](docs/continuous_batching.md)
+- [docs/principle_recipes.md](docs/principle_recipes.md)
+- [docs/learning_plan.md](docs/learning_plan.md)
+- [docs/interview_questions.md](docs/interview_questions.md)
+- Learning materials per phase: `docs/learning_materials/`
+- Chinese versions: `_zh` files in `docs/`
 
-- 多请求同时 prefill
-- decode 生成新 token
--	ragged 方式合并 prefill chunk
--	dynamic scheduling 填满 token budget
--	KV cache 按序追加
--	request 完成立刻替换（continuous）
+## 5. What’s implemented
+- **Request lifecycle:** prefill chunks, decode tokens, and simple stopping when `max_new_tokens` is reached.
+- **Dense + paged KV caches:** append-only storage; paged mode uses a tiny block allocator to mimic paged attention layouts.
+- **Ragged batch builder:** concatenates prompt chunks and builds a boolean ragged causal mask so different sequences are isolated without padding.
+- **Attention modules:** dense causal attention, ragged attention with an explicit mask, and paged decode attention over the cache.
+- **TinyLLM model:** single-head attention with linear projections; exposes `forward_prefill_ragged` and `forward_decode`.
+- **Continuous batching scheduler:** token-budget aware, mixes decode tokens with prefill chunks, and logs the shape/mask decisions at every step.
+- **Demos:** cover prefill-only, ragged mask visualization, mixed prefill+decode timeline, and paged attention decode.
+- **Tests:** sanity checks for masks, ragged metadata, scheduler completion, KV cache append, and paged decode.
 
-✔ Ragged batching + attention mask
+## 6. Learning notes
+- Ragged batching removes the batch dimension entirely; masking enforces isolation between sequences while keeping causal order within each request.
+- Continuous batching keeps the GPU busy by always scheduling decode tokens first, then filling the remaining token budget with prefill chunks.
+- Paged attention stores KV in fixed-size blocks; this repo uses a minimal allocator to show the data layout without any CUDA kernels.
 
-无需 padding；通过 ragged causal mask 保证：
+Enjoy experimenting—every file is short enough to step through with a debugger or print statements.
 
-- 相同序列能互相看到
-- 不同序列完全隔离
-- 局部 causal 约束正确
+---
 
-并提供 ragged 可视化工具。
-
-✔ 简化版 paged attention（可选）
-
-包含最小 block allocator：
-
-- KV 按 block 存储
-- decode 查询 block → 计算 q·kᵀ
-- 无 mask，天然 causal
-
-✔ 全过程可视化与 debug
-
-提供：
-
--	ragged-token-table 可视化
--	ragged causal mask 可视化
--	调度 timeline 输出
--	每步 GPU token 利用率打印
+**Note:** Most project code and documentation here were generated with assistance from Codex.
