@@ -46,7 +46,7 @@ class Request:
             self._validate_max_new_tokens()
             self._validate_kv_cache()
             self._initialize_decode_seed()
-        except (ValidationError, ConfigurationError) as e:
+        except (ValidationError, ConfigurationError):
             # Re-raise validation errors directly
             raise
         except Exception as e:

@@ -45,9 +45,66 @@
 - **运行**：`pytest tests`
 - **阅读**：`tests/test_*` 理解期望行为（mask 因果、调度完成、KV 追加）。
 
-## 阶段 8：扩展探索
+## 阶段 8：插件系统
+- **概念**：可扩展架构，支持自定义功能与监控。
+- **阅读**：`plugins/base.py`、`plugins/builtin.py`
+- **运行**：创建自定义插件并测试调度器
+- **练习**：实现自定义日志插件或缓存优化插件
+- **示例**：
+```python
+from cb_lab.plugins.base import SchedulerPlugin
+from cb_lab.plugins.builtin import LoggingPlugin, MetricsPlugin
+
+class 自定义插件(SchedulerPlugin):
+    def before_step(self, scheduler):
+        print(f"步骤 {scheduler.step_count}: {len(scheduler.active)} 个活跃请求")
+
+# 在调度器中使用
+manager.register_scheduler_plugin(自定义插件())
+manager.register_scheduler_plugin(MetricsPlugin())
+```
+
+## 阶段 9：监控与性能分析
+- **概念**：跟踪性能指标与内存使用，进行优化。
+- **阅读**：`monitoring/metrics.py`、`monitoring/memory_profiler.py`
+- **运行**：
+  ```bash
+  python demos/interactive_demo.py  # 实时监控
+  python benchmarks/test_scalability.py  # 性能分析
+  ```
+- **练习**：使用 `DetailedMemoryProfiler` 分析内存模式
+- **示例**：
+```python
+from cb_lab.monitoring.metrics import MetricsCollector
+from cb_lab.monitoring.memory_profiler import DetailedMemoryProfiler
+
+metrics = MetricsCollector()
+profiler = DetailedMemoryProfiler()
+
+with profiler.profile_context("调度器步骤"):
+    stats = scheduler.step()
+    metrics.record_step(**stats)
+
+summary = metrics.get_step_summary()
+print(f"吞吐量: {summary['tokens_per_second']:.2f} tok/s")
+```
+
+## 阶段 10：高级主题
+- **概念**：性能优化、可扩展性和生产环境考虑。
+- **探索主题**：
+  - 不同工作负载的批次大小调优
+  - 内存泄漏检测与预防
+  - 缓存压缩策略
+  - 多 GPU 考虑（未来扩展）
+  - 与真实模型和分词器的集成
+
+## 阶段 11：扩展探索
 - 增加更多请求与更长 prompt，观察 mask/KV 增长。
 - 降低 `max_tokens_per_step` 模拟高负载，评估吞吐。
+- 使用插件系统实现自定义注意力机制。
+- 为特定用例构建全面的性能基准测试。
+- 创建连续批处理行为的可视化工具。
+- 在 decode 输出上添加简单"采样"（如 tanh），观察不同 token 轨迹。
 - 在 decode 输出上加简单“采样”（如 tanh）观察 token 轨迹变化。
 
 ## 分阶段学习资料

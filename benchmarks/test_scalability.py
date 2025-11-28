@@ -3,14 +3,14 @@
 import time
 import statistics
 import matplotlib.pyplot as plt
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 import torch
 
 from cb_lab.core.scheduler import Scheduler
 from cb_lab.core.request import Request
 from cb_lab.core.kv_cache import DenseKVCache, PagedKVCache
 from cb_lab.model.tiny_llm import TinyLLM
-from cb_lab.monitoring.metrics import MetricsCollector, PerformanceBenchmark
+from cb_lab.monitoring.metrics import MetricsCollector
 
 
 class ScalabilityBenchmark:
@@ -358,11 +358,9 @@ class ScalabilityBenchmark:
             report.append("## Scheduler Performance\n")
 
             max_throughput = max(results["throughput_tokens_per_sec"])
+            min_time_idx = results["completion_times"].index(min(results["completion_times"]))
             min_time_per_request = (
-                min(results["completion_times"])
-                / results["request_counts"][
-                    results["completion_times"].index(min(results["completion_times"]))
-                ]
+                min(results["completion_times"]) / results["request_counts"][min_time_idx]
             )
 
             report.append(f"- **Peak Throughput**: {max_throughput:.2f} tokens/sec")

@@ -12,7 +12,12 @@ This document provides comprehensive API documentation for the cb-lab educationa
 - [Model Components](#model-components)
   - [TinyLLM](#tinylm)
 - [Attention Mechanisms](#attention-mechanisms)
+- [Plugin System](#plugin-system)
+  - [PluginManager](#pluginmanager)
+  - [Built-in Plugins](#built-in-plugins)
 - [Monitoring and Metrics](#monitoring-and-metrics)
+  - [Performance Metrics](#performance-metrics)
+  - [Memory Profiling](#memory-profiling)
 - [Exceptions](#exceptions)
 - [Examples](#examples)
 
@@ -274,6 +279,128 @@ Decode path for single token generation.
 **Returns:**
 - `Tuple[torch.Tensor, torch.Tensor, torch.Tensor]`: (output, new_keys, new_values)
 
+## Plugin System
+
+### PluginManager
+
+Central manager for organizing and executing plugins across different phases of the continuous batching pipeline.
+
+```python
+class PluginManager:
+    def __init__(self) -> None:
+```
+
+#### Methods
+
+##### register_scheduler_plugin(plugin, config=None)
+
+Register a scheduler plugin with optional configuration.
+
+**Parameters:**
+- `plugin` (`SchedulerPlugin`): Plugin instance to register
+- `config` (`Optional[Dict[str, Any]]`): Plugin configuration (default: None)
+
+##### register_attention_plugin(plugin, config=None)
+
+Register an attention plugin with optional configuration.
+
+**Parameters:**
+- `plugin` (`AttentionPlugin`): Plugin instance to register
+- `config` (`Optional[Dict[str, Any]]`): Plugin configuration (default: None)
+
+##### register_cache_plugin(plugin, config=None)
+
+Register a cache plugin with optional configuration.
+
+**Parameters:**
+- `plugin` (`CachePlugin`): Plugin instance to register
+- `config` (`Optional[Dict[str, Any]]`): Plugin configuration (default: None)
+
+##### get_plugin_config(plugin_name) -> Dict[str, Any]
+
+Get configuration for a specific plugin.
+
+**Parameters:**
+- `plugin_name` (`str`): Name of the plugin
+
+**Returns:**
+- `Dict[str, Any]`: Plugin configuration dictionary
+
+##### set_plugin_config(plugin_name, config)
+
+Set configuration for a specific plugin.
+
+**Parameters:**
+- `plugin_name` (`str`): Name of the plugin
+- `config` (`Dict[str, Any]`): Configuration dictionary
+
+##### list_plugins() -> Dict[str, List[str]]
+
+List all registered plugins by type.
+
+**Returns:**
+- `Dict[str, List[str]]`: Dictionary with plugin names by category
+
+**Example:**
+```python
+from cb_lab.plugins.base import PluginManager
+from cb_lab.plugins.builtin import LoggingPlugin, MetricsPlugin
+
+manager = PluginManager()
+manager.register_scheduler_plugin(LoggingPlugin())
+manager.register_scheduler_plugin(MetricsPlugin())
+
+plugins = manager.list_plugins()
+print(f"Registered scheduler plugins: {plugins['scheduler']}")
+```
+
+### Built-in Plugins
+
+#### LoggingPlugin
+
+Simple logging plugin for scheduler events.
+
+```python
+class LoggingPlugin(SchedulerPlugin):
+    def __init__(self, log_level: str = "INFO"):
+```
+
+**Parameters:**
+- `log_level` (`str`): Logging level (default: "INFO")
+
+#### MetricsPlugin
+
+Detailed metrics collection plugin.
+
+```python
+class MetricsPlugin(SchedulerPlugin):
+    def __init__(self) -> None:
+```
+
+#### CacheCompressionPlugin
+
+KV cache compression plugin for memory optimization.
+
+```python
+class CacheCompressionPlugin(CachePlugin):
+    def __init__(self, compression_ratio: float = 0.5):
+```
+
+**Parameters:**
+- `compression_ratio` (`float`): Target compression ratio (default: 0.5)
+
+#### AttentionVisualizationPlugin
+
+Plugin for visualizing attention patterns.
+
+```python
+class AttentionVisualizationPlugin(AttentionPlugin):
+    def __init__(self, save_dir: str = "attention_viz"):
+```
+
+**Parameters:**
+- `save_dir` (`str`): Directory to save visualizations (default: "attention_viz")
+
 ## Monitoring and Metrics
 
 ### MetricsCollector
@@ -318,6 +445,154 @@ Start tracking a new request.
 **Parameters:**
 - `req_id` (`str`): Request identifier
 - `total_tokens` (`int`): Expected total tokens for the request
+
+## Memory Profiling
+
+### MemoryProfiler
+
+Basic memory usage profiler for monitoring system and GPU memory.
+
+```python
+class MemoryProfiler:
+    def __init__(self) -> None:
+```
+
+#### Methods
+
+##### get_current_memory() -> float
+
+Get current system memory usage in MB.
+
+**Returns:**
+- `float`: Current memory usage in MB
+
+##### get_gpu_memory() -> float
+
+Get current GPU memory usage in MB.
+
+**Returns:**
+- `float`: GPU memory usage in MB (0.0 if no GPU available)
+
+##### get_memory_delta() -> float
+
+Get memory usage change from baseline in MB.
+
+**Returns:**
+- `float`: Memory delta from baseline
+
+##### set_baseline() -> None
+
+Set baseline memory measurement.
+
+##### log_memory_usage(context="") -> Dict[str, float]
+
+Log current memory usage with context.
+
+**Parameters:**
+- `context` (`str`): Optional context label
+
+**Returns:**
+- `Dict[str, float]`: Memory usage statistics
+
+### DetailedMemoryProfiler
+
+Advanced memory profiler with snapshot capabilities and leak detection.
+
+```python
+class DetailedMemoryProfiler:
+    def __init__(self, sampling_interval: float = 0.1):
+```
+
+**Parameters:**
+- `sampling_interval` (`float`): Sampling interval in seconds (default: 0.1)
+
+#### Methods
+
+##### take_snapshot(context="") -> MemorySnapshot
+
+Take a snapshot of current memory usage.
+
+**Parameters:**
+- `context` (`str`): Context label for the snapshot
+
+**Returns:**
+- `MemorySnapshot`: Memory usage snapshot
+
+##### set_baseline(context="baseline") -> None
+
+Set baseline memory measurement.
+
+**Parameters:**
+- `context` (`str`): Context label for baseline
+
+##### get_memory_delta(snapshot=None) -> Dict[str, float]
+
+Get memory usage delta from baseline.
+
+**Parameters:**
+- `snapshot` (`Optional[MemorySnapshot]`): Specific snapshot to compare (default: latest)
+
+**Returns:**
+- `Dict[str, float]`: Memory deltas
+
+##### get_peak_memory_usage() -> Dict[str, float]
+
+Get peak memory usage statistics.
+
+**Returns:**
+- `Dict[str, float]`: Peak memory statistics
+
+##### profile_context(context_name) -> ContextManager
+
+Context manager for profiling specific code blocks.
+
+**Parameters:**
+- `context_name` (`str`): Name for the profiling context
+
+**Example:**
+```python
+from cb_lab.monitoring.memory_profiler import DetailedMemoryProfiler
+
+profiler = DetailedMemoryProfiler()
+
+with profiler.profile_context("heavy_computation"):
+    # Your code here
+    result = some_heavy_function()
+
+print(f"Memory delta: {profiler.get_memory_delta()}")
+```
+
+### MemoryLeakDetector
+
+Tool for detecting potential memory leaks.
+
+```python
+class MemoryLeakDetector:
+    def __init__(self, threshold_mb: float = 10.0):
+```
+
+**Parameters:**
+- `threshold_mb` (`float`): Memory growth threshold in MB (default: 10.0)
+
+#### Methods
+
+##### set_baseline() -> None
+
+Set baseline memory measurement.
+
+##### record_measurement(label="") -> None
+
+Record a memory measurement.
+
+**Parameters:**
+- `label` (`str`): Optional label for the measurement
+
+##### check_for_leaks() -> Dict[str, Any]
+
+Check if memory usage indicates a potential leak.
+
+**Returns:**
+- `Dict[str, Any]`: Leak detection results
 
 ## Exceptions
 
@@ -415,6 +690,57 @@ except RequestError as e:
     print(f"Request error: {e}")
 ```
 
+### Using Plugins
+
+```python
+from cb_lab.plugins.base import PluginManager
+from cb_lab.plugins.builtin import LoggingPlugin, MetricsPlugin, CacheCompressionPlugin
+
+# Create plugin manager
+manager = PluginManager()
+
+# Register plugins
+manager.register_scheduler_plugin(LoggingPlugin("DEBUG"))
+manager.register_scheduler_plugin(MetricsPlugin())
+manager.register_cache_plugin(CacheCompressionPlugin(0.7))
+
+# Set plugin configurations
+manager.set_plugin_config("LoggingPlugin", {"log_level": "INFO"})
+
+# List registered plugins
+plugins = manager.list_plugins()
+print(f"Plugins: {plugins}")
+```
+
+### Memory Profiling
+
+```python
+from cb_lab.monitoring.memory_profiler import DetailedMemoryProfiler, MemoryLeakDetector
+
+# Basic memory profiling
+profiler = DetailedMemoryProfiler()
+profiler.set_baseline()
+
+with profiler.profile_context("inference"):
+    # Run your inference code
+    scheduler.step()
+
+delta = profiler.get_memory_delta()
+print(f"Memory delta: {delta['rss_delta_mb']:.2f} MB")
+
+# Leak detection
+detector = MemoryLeakDetector(threshold_mb=5.0)
+detector.set_baseline()
+
+for i in range(100):
+    run_inference_step()
+    detector.record_measurement(f"step_{i}")
+
+results = detector.check_for_leaks()
+if results['status'] == 'leak_detected':
+    print("Potential memory leak detected!")
+```
+
 ## Performance Tips
 
 1. **Choose appropriate cache types**: Use `DenseKVCache` for simplicity, `PagedKVCache` for memory efficiency
@@ -422,3 +748,8 @@ except RequestError as e:
 3. **Monitor performance**: Use `MetricsCollector` to track throughput and identify bottlenecks
 4. **Handle errors gracefully**: Use try-catch blocks around request operations
 5. **Resource management**: Monitor memory usage, especially with large models or many requests
+6. **Use plugins for profiling**: Leverage built-in plugins like `MetricsPlugin` and `LoggingPlugin` for better insights
+7. **Memory leak detection**: Use `MemoryLeakDetector` for long-running applications
+8. **Cache compression**: Apply `CacheCompressionPlugin` when memory is constrained
+9. **Batch optimization**: Experiment with different chunk sizes to find optimal throughput
+10. **Context-aware profiling**: Use `DetailedMemoryProfiler.profile_context()` for targeted optimization

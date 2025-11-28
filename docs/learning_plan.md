@@ -45,9 +45,65 @@ Goal: guide you through cb-lab to deeply understand continuous batching, from ba
 - **Run:** `pytest tests`
 - **Read:** `tests/test_*` to see expected behaviors (mask causality, scheduler completion, KV append).
 
-## Phase 8: Open-ended explorations
+## Phase 8: Plugin system
+- **Concept:** Extensible architecture for custom functionality and monitoring.
+- **Read:** `plugins/base.py`, `plugins/builtin.py`
+- **Run:** Create custom plugins and test with the scheduler
+- **Exercise:** Implement a custom logging plugin or a cache optimization plugin
+- **Example:**
+```python
+from cb_lab.plugins.base import SchedulerPlugin
+from cb_lab.plugins.builtin import LoggingPlugin, MetricsPlugin
+
+class CustomPlugin(SchedulerPlugin):
+    def before_step(self, scheduler):
+        print(f"Step {scheduler.step_count}: {len(scheduler.active)} active requests")
+
+# Use in scheduler
+manager.register_scheduler_plugin(CustomPlugin())
+manager.register_scheduler_plugin(MetricsPlugin())
+```
+
+## Phase 9: Monitoring and profiling
+- **Concept:** Track performance metrics and memory usage for optimization.
+- **Read:** `monitoring/metrics.py`, `monitoring/memory_profiler.py`
+- **Run:**
+  ```bash
+  python demos/interactive_demo.py  # Real-time monitoring
+  python benchmarks/test_scalability.py  # Performance analysis
+  ```
+- **Exercise:** Use `DetailedMemoryProfiler` to analyze memory patterns
+- **Example:**
+```python
+from cb_lab.monitoring.metrics import MetricsCollector
+from cb_lab.monitoring.memory_profiler import DetailedMemoryProfiler
+
+metrics = MetricsCollector()
+profiler = DetailedMemoryProfiler()
+
+with profiler.profile_context("scheduler_step"):
+    stats = scheduler.step()
+    metrics.record_step(**stats)
+
+summary = metrics.get_step_summary()
+print(f"Throughput: {summary['tokens_per_second']:.2f} tok/s")
+```
+
+## Phase 10: Advanced topics
+- **Concept:** Performance optimization, scalability, and production considerations.
+- **Topics to explore:**
+  - Batch size tuning for different workloads
+  - Memory leak detection and prevention
+  - Cache compression strategies
+  - Multi-GPU considerations (future extensions)
+  - Integration with real models and tokenizers
+
+## Phase 11: Open-ended explorations
 - Add more requests with varying prompt lengths; watch mask and KV growth.
 - Simulate higher load by reducing `max_tokens_per_step` and inspecting throughput.
+- Implement custom attention mechanisms using the plugin system.
+- Build comprehensive performance benchmarks for specific use cases.
+- Create visualization tools for continuous batching behavior.
 - Add simple “sampling” (e.g., tanh) on decode outputs to see different token trajectories.
 
 ## Learning materials (per phase)

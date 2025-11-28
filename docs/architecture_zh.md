@@ -9,7 +9,11 @@ cb-lab 围绕最小化的连续批处理管线组织，每个目录对应推理�
 - `core/scheduler.py`：按 token 预算混合 decode 与 prefill 的主循环。
 - `attention/*.py`：稠密、ragged、paged 解码注意力。
 - `model/tiny_llm.py`：单层单头注意力（Q/K/V/O）。
-- `demos/*.py`：练习脚本。
+- `monitoring/metrics.py`：性能监控与指标收集工具。
+- `monitoring/memory_profiler.py`：高级内存分析与泄漏检测。
+- `plugins/base.py`：可扩展性的插件系统基础架构。
+- `plugins/builtin.py`：内置插件：日志、指标、压缩、可视化。
+- `demos/*.py`：练习脚本和交互式演示。
 - `tests/*.py`：mask、KV、调度、paged 解码的基础校验。
 
 ## 单步数据流
@@ -27,3 +31,16 @@ cb-lab 围绕最小化的连续批处理管线组织，每个目录对应推理�
 ## Mask 策略
 - Prefill 使用 ragged 布尔 mask 隔离序列且保持因果。
 - Decode 路径天然因果，只访问自身 KV 历史。
+
+## 插件系统
+- **PluginManager**：管理调度器、注意力、缓存插件的中央注册器。
+- **SchedulerPlugin**：钩子函数，用于 before_step、after_step 和 on_request_completion 事件。
+- **AttentionPlugin**：自定义注意力计算实现。
+- **CachePlugin**：KV 缓存压缩与优化策略。
+- 内置插件：LoggingPlugin、MetricsPlugin、CacheCompressionPlugin、AttentionVisualizationPlugin。
+
+## 监控与性能分析
+- **MetricsCollector**：收集步骤级统计信息（处理 token 数、步骤时长、内存使用）。
+- **MemoryProfiler**：跟踪系统和 GPU 内存使用，支持基线比较。
+- **DetailedMemoryProfiler**：高级性能分析，支持上下文感知快照和泄漏检测。
+- **PerformanceBenchmark**：测量和比较组件性能的工具。

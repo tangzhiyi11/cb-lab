@@ -8,8 +8,12 @@ cb_lab/           # library code
   core/           # request lifecycle, scheduler loop, KV cache, ragged batch builder
   attention/      # dense, ragged, paged attention helpers and masks
   model/          # TinyLLM single-layer attention block
-demos/            # runnable examples: prefill, decode, masking, scheduling
+  plugins/        # plugin system for extensibility
+  monitoring/     # performance monitoring and memory profiling tools
+demos/            # runnable examples: prefill, decode, masking, scheduling, monitoring
 tests/            # sanity checks: mask, KV cache, scheduler, paged decode
+benchmarks/       # performance benchmarks and scalability tests
+format_code.py    # code formatting and quality checking script
 cb-lab-logo.svg
 README.md
 docs/
@@ -35,19 +39,64 @@ pip install -r requirements.txt
   ```bash
   python -m demos.demo_paged_attention
   ```
+- Interactive demo with real-time parameter adjustment:
+  ```bash
+  python demos/interactive_demo.py
+  ```
+- Visualization demo:
+  ```bash
+  python demos/visualization_demo.py
+  ```
+- Performance benchmarks:
+  ```bash
+  python benchmarks/test_scalability.py
+  ```
 - Test suite:
   ```bash
   pytest tests
   ```
+- Code formatting and quality check:
+  ```bash
+  python format_code.py --check-only
+  ```
 
 ## 3) More docs
 - [Architecture](./architecture.md)
+- [API Reference](./api_reference.md)
 - [Continuous batching](./continuous_batching.md)
 - [Principles → recipes](./principle_recipes.md)
 - [Learning plan](./learning_plan.md)
 - [Interview Q&A](./interview_questions.md)
 - Learning materials per phase: `docs/learning_materials/`
 - Chinese versions: `_zh` files in `docs/`
+
+## 4) New Features
+
+### Plugin System
+cb-lab now includes a comprehensive plugin system for extending functionality:
+- **SchedulerPlugin**: Hook into scheduler lifecycle events
+- **AttentionPlugin**: Implement custom attention mechanisms
+- **CachePlugin**: Optimize KV cache storage and retrieval
+- Built-in plugins: LoggingPlugin, MetricsPlugin, CacheCompressionPlugin
+
+### Monitoring & Profiling
+Advanced monitoring tools for performance analysis:
+- **MetricsCollector**: Track throughput, latency, and resource usage
+- **MemoryProfiler**: Monitor system and GPU memory consumption
+- **DetailedMemoryProfiler**: Advanced profiling with leak detection
+- **PerformanceBenchmark**: Compare different configurations
+
+### Interactive Demos
+New interactive demos for hands-on learning:
+- **interactive_demo.py**: Real-time parameter adjustment and visualization
+- **visualization_demo.py**: Generate comprehensive visualizations
+- **benchmarks/**: Scalability and performance testing tools
+
+### Development Tools
+Enhanced development experience:
+- **format_code.py**: Automated code formatting and quality checking
+- **Comprehensive testing**: Integration tests and edge case validation
+- **Type safety**: Full mypy type annotation support
 
 ## 3) Core concepts
 - **Request lifecycle (`core/request.py`):** tracks prompt tokens, prefill position, generated tokens, KV cache, and decode seed. Switches from prefill to decode once the prompt is consumed.

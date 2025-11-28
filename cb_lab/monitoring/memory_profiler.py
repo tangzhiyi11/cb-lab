@@ -3,7 +3,7 @@
 import gc
 import threading
 import time
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from collections import defaultdict
 from contextlib import contextmanager
