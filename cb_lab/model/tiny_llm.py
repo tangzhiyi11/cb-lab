@@ -38,7 +38,9 @@ class TinyLLM(nn.Module):
         out = self.wo(attn_out)
         return out, k, v
 
-    def forward_prefill_dense(self, tokens: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward_prefill_dense(
+        self, tokens: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Alternative dense prefill (single sequence)."""
         q = self.wq(tokens)
         k = self.wk(tokens)
@@ -58,3 +60,9 @@ class TinyLLM(nn.Module):
         attn_out = paged_decode_attention(q, kv_cache)
         out = self.wo(attn_out)
         return out, k_new, v_new
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Standard forward pass for basic usage."""
+        # Simple dense attention for single sequence
+        out, _, _ = self.forward_prefill_dense(x)
+        return out

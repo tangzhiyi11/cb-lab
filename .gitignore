@@ -3,6 +3,7 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+*.egg-info/
 
 # OS artifacts
 .DS_Store

@@ -77,4 +77,4 @@ Enjoy experimenting—every file is short enough to step through with a debugger
 
 ---
 
-**Note:** Most project code and documentation here were generated with assistance from Codex.
+**Note:** Most project code and documentation here were generated with assistance from Codex and GLM 4.6.
